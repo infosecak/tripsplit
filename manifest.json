@@ -1,0 +1,33 @@
+{
+  "name": "TripSplit — Trip Expense Splitter",
+  "short_name": "TripSplit",
+  "description": "Split trip expenses with friends. Log itemized expenses per traveler, flip a card to reveal totals, and see who owes whom at a glance.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1B1B3A",
+  "theme_color": "#1B1B3A",
+  "categories": ["finance", "travel", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>TripSplit — split the trip, not the friendship</title>
+<meta name="description" content="A stylish, offline-friendly trip expense splitter. Log itemized expenses per traveler, see the running total, and find out who owes whom at a glance." />
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1B1B3A" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="TripSplit" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
+<link rel="shortcut icon" href="favicon.ico" />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- decorative fixed backdrop -->
+<div class="sky" aria-hidden="true">
+  <div class="sky__glow sky__glow--one"></div>
+  <div class="sky__glow sky__glow--two"></div>
+  <div class="sky__grain"></div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- ===================== SETUP SCREEN ===================== -->
+<main id="setup-screen" class="screen setup" hidden>
+  <div class="setup__card">
+    <div class="brand">
+      <svg class="brand__mark" viewBox="0 0 48 48" aria-hidden="true">
+        <polygon points="44,8 18,26 8,23" fill="var(--paper)"></polygon>
+        <polygon points="44,8 18,26 22,40" fill="var(--coral)"></polygon>
+        <polygon points="44,8 8,23 18,26" fill="none"></polygon>
+      </svg>
+      <span class="brand__word">tripsplit</span>
+    </div>
+    <p class="setup__tagline">Split the trip, not the friendship.</p>
+
+    <form id="setup-form" novalidate>
+      <label class="field">
+        <span class="field__label">What's this trip called?</span>
+        <input id="trip-name-input" class="field__input" type="text" placeholder="Goa with the gang" maxlength="40" autocomplete="off" />
+      </label>
+
+      <div class="field">
+        <span class="field__label">How many travelers?</span>
+        <div class="stepper">
+          <button type="button" class="stepper__btn" id="stepper-minus" aria-label="Decrease number of travelers">−</button>
+          <span class="stepper__value" id="stepper-value">4</span>
+          <button type="button" class="stepper__btn" id="stepper-plus" aria-label="Increase number of travelers">+</button>
+        </div>
+      </div>
+
+      <div id="name-fields" class="name-fields"></div>
+
+      <button type="submit" class="btn btn--primary btn--block" id="setup-submit">Start splitting</button>
+    </form>
+  </div>
+</main>
+
+<!-- ===================== DASHBOARD SCREEN ===================== -->
+<main id="dashboard-screen" class="screen dashboard" hidden>
+
+  <header class="board">
+    <div class="board__top">
+      <div class="board__trip">
+        <svg class="board__planeicon" viewBox="0 0 48 48" aria-hidden="true">
+          <polygon points="44,8 18,26 8,23" fill="var(--paper)"></polygon>
+          <polygon points="44,8 18,26 22,40" fill="var(--coral)"></polygon>
+        </svg>
+        <input id="trip-name-display" class="board__trip-input" type="text" maxlength="40" aria-label="Trip name" />
+      </div>
+      <button class="icon-btn" id="settings-btn" aria-label="Open settings" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Zm8.94 2.6-1.64-.28a7.4 7.4 0 0 0-.5-1.2l.97-1.35a.6.6 0 0 0-.06-.77l-1.36-1.36a.6.6 0 0 0-.77-.06l-1.35.97a7.4 7.4 0 0 0-1.2-.5L14.7 4.9a.6.6 0 0 0-.59-.5h-1.92a.6.6 0 0 0-.6.5l-.27 1.64a7.4 7.4 0 0 0-1.2.5L8.77 6.06a.6.6 0 0 0-.77.06L6.64 7.48a.6.6 0 0 0-.06.77l.97 1.35a7.4 7.4 0 0 0-.5 1.2l-1.64.27a.6.6 0 0 0-.5.6v1.92a.6.6 0 0 0 .5.59l1.64.28c.12.42.29.82.5 1.2l-.97 1.34a.6.6 0 0 0 .06.78l1.36 1.36c.2.2.53.23.77.06l1.35-.97c.38.21.78.38 1.2.5l.27 1.64a.6.6 0 0 0 .6.5h1.92a.6.6 0 0 0 .6-.5l.27-1.64c.42-.12.82-.29 1.2-.5l1.35.97c.24.17.56.14.77-.06l1.36-1.36a.6.6 0 0 0 .06-.77l-.97-1.35c.21-.38.38-.78.5-1.2l1.64-.27a.6.6 0 0 0 .5-.6v-1.92a.6.6 0 0 0-.5-.6Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <div class="board__total">
+      <span class="board__total-label">Total spend</span>
+      <div class="board__total-amount">
+        <span class="board__currency" id="total-currency">₹</span><span class="board__total-figure mono" id="total-figure">0</span>
+      </div>
+      <span class="board__total-sub" id="total-sub">0 travelers · ₹0 avg / person</span>
+    </div>
+  </header>
+
+  <section class="cards-section" aria-label="Travelers">
+    <div class="cards-grid" id="cards-grid"></div>
+  </section>
+
+  <section class="settle-section" aria-label="Who owes whom">
+    <h2 class="settle-title">Who owes whom</h2>
+    <div id="settle-list" class="settle-list"></div>
+  </section>
+
+  <footer class="dash-footer">
+    <button class="btn btn--ghost" id="summary-btn">View summary</button>
+    <button class="btn btn--ghost btn--danger" id="reset-btn">Reset trip</button>
+  </footer>
+</main>
+
+<!-- ===================== SETTINGS SHEET ===================== -->
+<div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
+<div id="settings-sheet" class="sheet" role="dialog" aria-modal="true" aria-label="Settings" hidden>
+  <div class="sheet__handle"></div>
+  <h2 class="sheet__title">Settings</h2>
+
+  <div class="sheet__row">
+    <span class="sheet__row-label">Currency</span>
+    <div class="currency-picker" id="currency-picker">
+      <button type="button" class="currency-picker__opt" data-currency="₹">₹ INR</button>
+      <button type="button" class="currency-picker__opt" data-currency="$">$ USD</button>
+      <button type="button" class="currency-picker__opt" data-currency="€">€ EUR</button>
+      <button type="button" class="currency-picker__opt" data-currency="£">£ GBP</button>
+    </div>
+  </div>
+
+  <div class="sheet__row">
+    <span class="sheet__row-label">Round settlement suggestions</span>
+    <label class="switch">
+      <input type="checkbox" id="round-toggle" checked />
+      <span class="switch__track"><span class="switch__thumb"></span></span>
+    </label>
+  </div>
+
+  <button class="btn btn--primary btn--block" id="sheet-close-btn">Done</button>
+  <button class="btn btn--text btn--block" id="new-trip-btn">Start a brand-new trip</button>
+</div>
+
+<!-- ===================== EDIT NAME MODAL ===================== -->
+<div id="modal-backdrop" class="sheet-backdrop" hidden></div>
+<div id="rename-modal" class="modal" role="dialog" aria-modal="true" aria-label="Edit traveler" hidden>
+  <h3 class="modal__title">Edit traveler</h3>
+  <label class="field">
+    <span class="field__label">Name</span>
+    <input id="rename-input" class="field__input" type="text" maxlength="24" autocomplete="off" />
+  </label>
+  <div class="modal__actions">
+    <button class="btn btn--ghost btn--danger" id="rename-delete-btn">Remove</button>
+    <div class="modal__actions-right">
+      <button class="btn btn--text" id="rename-cancel-btn">Cancel</button>
+      <button class="btn btn--primary" id="rename-save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== EXPENSES SHEET (per traveler) ===================== -->
+<div id="expense-backdrop" class="sheet-backdrop" hidden></div>
+<div id="expense-sheet" class="sheet sheet--tall" role="dialog" aria-modal="true" aria-label="Traveler expenses" hidden>
+  <div class="sheet__handle"></div>
+  <div class="sheet__header-row">
+    <div class="sheet__header-text">
+      <h2 class="sheet__title" id="expense-sheet-name">Traveler</h2>
+      <p class="sheet__subtitle">Total spent: <span class="mono" id="expense-sheet-total"></span></p>
+    </div>
+    <button class="icon-btn" id="expense-sheet-close-x" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="expense-list" id="expense-list"></div>
+  <p class="expense-empty" id="expense-empty" hidden>No expenses logged yet — add the first one below.</p>
+
+  <form id="expense-add-form" class="expense-add-form">
+    <input id="expense-note-input" class="expense-add-form__note" type="text" placeholder="What was it for? (e.g. Hotel)" maxlength="40" autocomplete="off" />
+    <div class="expense-add-form__row2">
+      <span class="expense-add-form__currency mono" id="expense-add-currency"></span>
+      <input id="expense-amount-input" class="expense-add-form__amount mono" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" />
+      <button type="submit" class="btn btn--primary" id="expense-add-btn">Add</button>
+    </div>
+  </form>
+
+  <button class="btn btn--text btn--block" id="expense-sheet-done">Done</button>
+</div>
+
+<template id="expense-row-template">
+  <div class="expense-row">
+    <input class="expense-row__note" type="text" maxlength="40" placeholder="What was it for?" />
+    <span class="expense-row__currency mono"></span>
+    <input class="expense-row__amount mono" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" />
+    <button class="expense-row__delete" type="button" aria-label="Remove this expense">
+      <svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</template>
+
+<!-- ===================== TRIP SUMMARY SHEET ===================== -->
+<div id="summary-backdrop" class="sheet-backdrop" hidden></div>
+<div id="summary-sheet" class="sheet sheet--tall" role="dialog" aria-modal="true" aria-label="Trip summary" hidden>
+  <div class="sheet__handle"></div>
+  <h2 class="sheet__title" id="summary-trip-name">Trip summary</h2>
+  <p class="sheet__subtitle" id="summary-total-line"></p>
+
+  <div class="summary-body" id="summary-body"></div>
+
+  <div class="sheet__actions-row">
+    <button class="btn btn--ghost" id="summary-share-btn">Share</button>
+    <button class="btn btn--primary" id="summary-close-btn">Close</button>
+  </div>
+</div>
+
+<template id="summary-person-template">
+  <div class="summary-person">
+    <div class="summary-person__head">
+      <span class="summary-person__avatar mono"></span>
+      <span class="summary-person__name"></span>
+      <span class="summary-person__total mono"></span>
+    </div>
+    <div class="summary-person__items"></div>
+  </div>
+</template>
+
+<template id="summary-item-template">
+  <div class="summary-item">
+    <span class="summary-item__note"></span>
+    <span class="summary-item__amount mono"></span>
+  </div>
+</template>
+
+<template id="summary-empty-items-template">
+  <p class="summary-person__empty">No expenses logged</p>
+</template>
+
+<template id="card-template">
+  <div class="card" tabindex="0" role="button">
+    <div class="card__inner">
+      <div class="card__face card__face--front">
+        <div class="card__punchline" aria-hidden="true">
+          <span class="card__hole"></span>
+        </div>
+        <div class="card__stub" aria-hidden="true"></div>
+        <div class="card__avatar mono"></div>
+        <div class="card__name"></div>
+        <div class="card__hint">Tap to reveal</div>
+        <button class="card__menu-btn" aria-label="Edit traveler">
+          <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <div class="card__face card__face--back">
+        <div class="card__punchline" aria-hidden="true">
+          <span class="card__hole"></span>
+        </div>
+        <div class="card__stub" aria-hidden="true"></div>
+        <button class="card__back-btn" aria-label="Flip back">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M15 5 8 12l7 7" stroke="currentColor" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="card__menu-btn" aria-label="Edit traveler">
+          <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>
+        </button>
+        <div class="card__back-tap" role="button" aria-label="Add or edit expenses">
+          <span class="card__back-label">Spent by <em class="card__back-name"></em></span>
+          <div class="card__amount-row">
+            <span class="card__currency mono"></span><span class="card__total-figure mono"></span>
+          </div>
+          <div class="card__balance"></div>
+          <div class="card__expense-hint"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="add-card-template">
+  <button class="card card--add" type="button" aria-label="Add traveler">
+    <span class="card--add-plus">+</span>
+    <span class="card--add-label">Add traveler</span>
+  </button>
+</template>
+
+<template id="settle-row-template">
+  <div class="settle-row">
+    <div class="settle-row__who">
+      <span class="settle-row__from"></span>
+      <svg class="settle-row__path" viewBox="0 0 64 16" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="2" y1="8" x2="46" y2="8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <polygon points="46,3 58,8 46,13" fill="currentColor"/>
+      </svg>
+      <span class="settle-row__to"></span>
+    </div>
+    <span class="settle-row__amount mono"></span>
+  </div>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>
